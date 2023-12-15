@@ -1,5 +1,6 @@
 {
     "database": {
+      "name": "UniversityManagement",
       "connectionString": "mongodb+srv://charlottehjortshoj:QgfSvtIMShNcvmcC@cluster0.wroydh3.mongodb.net/?retryWrites=true&w=majority"
     }
   }

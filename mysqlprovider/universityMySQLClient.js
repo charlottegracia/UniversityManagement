@@ -13,11 +13,14 @@ class UniversityMySQLClient {
   constructor() {
     const configFile = path.join(__dirname, 'config.json');
     const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-    this.connection = mysql.createConnection({
+    this.connectionPool = mysql.createPool({
       host: config.database.host,
       user: config.database.user,
       password: config.database.password,
-      database: config.database.database
+      database: config.database.database,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
+      idleTimeout: 60000
     });
   }
 
@@ -27,7 +30,7 @@ class UniversityMySQLClient {
  */
   async connectToDb() {
     return new Promise((resolve, reject) => {
-      this.connection.connect((err) => {
+      this.connectionPool.getConnection((err) => {
         if (err) {
           console.error("Could not connect to MySQL database: " + err.stack);
           reject(err);
@@ -41,7 +44,7 @@ class UniversityMySQLClient {
 
   async getCourseById(id) {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.COURSES} WHERE CourseID = ${id}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.COURSES} WHERE CourseID = ${id}`, async (err, result) => {
         if (err) {
           console.error(`No course was found with the ID: ${id}.`);
           reject(err);
@@ -58,7 +61,7 @@ class UniversityMySQLClient {
 
   async getCourses() {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.COURSES}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.COURSES}`, async (err, result) => {
         if (err) {
           console.error("No courses were found.");
           reject(err);
@@ -78,7 +81,7 @@ class UniversityMySQLClient {
 
   async getDepartmentById(id) {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.DEPARTMENTS} WHERE DepartmentID = ${id}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.DEPARTMENTS} WHERE DepartmentID = ${id}`, async (err, result) => {
         if (err) {
           console.error(`No department was found with the ID: ${id}.`);
           reject(err);
@@ -95,7 +98,7 @@ class UniversityMySQLClient {
 
   async getDepartments() {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.DEPARTMENTS}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.DEPARTMENTS}`, async (err, result) => {
         if (err) {
           console.error("No departments were found.");
           reject(err);
@@ -116,7 +119,7 @@ class UniversityMySQLClient {
 
   async getEnrollmentById(id) {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.ENROLLMENTS} WHERE EnrollmentID = ${id}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.ENROLLMENTS} WHERE EnrollmentID = ${id}`, async (err, result) => {
         if (err) {
           console.error(`No enrollment was found with the ID: ${id}.`);
           reject(err);
@@ -140,7 +143,7 @@ class UniversityMySQLClient {
 
   async getEnrollmentByStudentId(studentId) {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.ENROLLMENTS} WHERE StudentID = ${studentId}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.ENROLLMENTS} WHERE StudentID = ${studentId}`, async (err, result) => {
         if (err) {
           console.error(`No enrollment was found with the ID: ${id}.`);
           reject(err);
@@ -168,7 +171,7 @@ class UniversityMySQLClient {
 
   async getEnrollments() {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.ENROLLMENTS}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.ENROLLMENTS}`, async (err, result) => {
         if (err) {
           console.error("No enrollments were found.");
           reject(err);
@@ -196,7 +199,7 @@ class UniversityMySQLClient {
 
   async getFacultyById(id) {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.FACULTIES} WHERE FacultyID = ${id}`, (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.FACULTIES} WHERE FacultyID = ${id}`, (err, result) => {
         if (err) {
           console.error(`No faculty was found with the ID: ${id}.`);
           reject(err);
@@ -213,7 +216,7 @@ class UniversityMySQLClient {
 
   async getFaculties() {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.FACULTIES}`, (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.FACULTIES}`, (err, result) => {
         if (err) {
           console.error("No faculties were found.");
           reject(err);
@@ -233,7 +236,7 @@ class UniversityMySQLClient {
 
   async getMajorById(id) {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.MAJORS} WHERE MajorID = ${id}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.MAJORS} WHERE MajorID = ${id}`, async (err, result) => {
         if (err) {
           console.error(`No major was found with the ID: ${id}.`);
           reject(err);
@@ -251,7 +254,7 @@ class UniversityMySQLClient {
 
   async getMajors() {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.MAJORS}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.MAJORS}`, async (err, result) => {
         if (err) {
           console.error("No majors were found.");
           reject(err);
@@ -272,15 +275,15 @@ class UniversityMySQLClient {
 
   async getStudentById(id) {
     return new Promise((resolve, reject) => {
-      const queryResult = this.connection.query(`SELECT * FROM ${MySQLTables.STUDENTS} WHERE StudentID = ${id}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.STUDENTS} WHERE StudentID = ${id}`, async (err, result) => {
         if (err) {
           console.error(`No student was found with the ID: ${id}.`)
           reject(err);
           return;
         }
-        const queryData = queryResult[0];
+        const queryData = result[0];
         const major = await this.getMajorById(queryData.MajorID);
-        const enrollments = this.getEnrollmentByStudentId(queryData.StudentID);
+        const enrollments = await this.getEnrollmentByStudentId(queryData.StudentID);
         const student = new Student(queryData.StudentID, queryData.Name, queryData.DateOfBirth, major, enrollments);
         resolve(student);
       });
@@ -289,7 +292,7 @@ class UniversityMySQLClient {
 
   async getStudents() {
     return new Promise((resolve, reject) => {
-      this.connection.query(`SELECT * FROM ${MySQLTables.STUDENTS}`, async (err, result) => {
+      this.connectionPool.query(`SELECT * FROM ${MySQLTables.STUDENTS}`, async (err, result) => {
         if (err) {
           console.error("No students were found.");
           reject(err);
@@ -298,7 +301,7 @@ class UniversityMySQLClient {
         let students = [];
         for (const queryData of result) {
           const major = await this.getMajorById(queryData.MajorID);
-          const enrollments = this.getEnrollmentByStudentId(queryData.StudentID);
+          const enrollments = await this.getEnrollmentByStudentId(queryData.StudentID);
           const student = new Student(queryData.StudentID, queryData.Name, queryData.DateOfBirth, major, enrollments);
           students.push(student);
         };
@@ -309,7 +312,7 @@ class UniversityMySQLClient {
 
   async disconnect() {
     return new Promise((resolve, reject) => {
-      this.connection.end((err) => {
+      this.connectionPool.end((err) => {
         if (err) {
           console.error("Error closing MySQL connection: " + err.stack);
           reject(err);
